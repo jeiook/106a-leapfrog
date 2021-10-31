@@ -5,7 +5,7 @@
  * prject: leap Frog
  * 
  * 
- * Iterface the Arduino uno with mpu6050 to get data, sample it for noise and printed to stream.
+ * Iterface the Arduino uno with mpu6050 to get accelartion data, sample it for noise and printed to stream.
  */
 
 
@@ -61,9 +61,15 @@ void loop() {
   delay(1000);
 }
 
-/**
- * Function to calculate gyro
- */
+
+ /*
+  * Function to calculate tilt with sample data
+  * 
+  * args :
+  *       float*  angles    pointer to array to store tilt_angles value
+  *       MPU6050 gyro      intialized object 
+  *       int     samp_size number of iterution for doing avg sampling algorithm
+  */
 void read_tilt(float* angels, MPU6050 gyro, int samp_size) {
   // accelartion in "g"
   int16_t x, y, z;
