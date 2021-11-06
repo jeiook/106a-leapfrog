@@ -50,7 +50,7 @@ void loop() {
 //    Serial.print("gy: "); Serial.println(gy); Serial.print("\t");
 //    Serial.print("gz: "); Serial.println(gz);
   float angels[] = {0.0, 0.0, 0.0};
-  read_tilt(angels, gyro, 500);
+  read_tilt_expo_mov(angels, gyro, 500, 0.25);
   Serial.println("Tilt angles:");Serial.print("\t");
   Serial.print("x-tilt: ");Serial.println(angels[0]);Serial.print("\t");
   Serial.print("y-tilt: ");Serial.println(angels[1]);Serial.print("\t");
@@ -63,14 +63,14 @@ void loop() {
 
 
  /*
-  * Function to calculate tilt with sample data
+  * Function to calculate tilt with ave sample data
   * 
   * args :
   *       float*  angles    pointer to array to store tilt_angles value
   *       MPU6050 gyro      intialized object 
   *       int     samp_size number of iterution for doing avg sampling algorithm
   */
-void read_tilt(float* angels, MPU6050 gyro, int samp_size) {
+void read_tilt_ave(float* angels, MPU6050 gyro, int samp_size) {
   // accelartion in "g"
   int16_t x, y, z;
   int16_t lax = 0;
@@ -87,3 +87,29 @@ void read_tilt(float* angels, MPU6050 gyro, int samp_size) {
   angels[1] = atan(lay / (pow((pow(lax, 2) + pow(laz, 2)), 0.5))) * 180 / M_PI;
   angels[2] = atan((pow((pow(lay, 2) + pow(laz, 2)), 0.5)) / laz) * 180 / M_PI;
 }
+
+
+/*
+  * Function to calculate tilt with exponitial moving ave sample data
+  * 
+  * args :
+  *       float*  angles    pointer to array to store tilt_angles value
+  *       MPU6050 gyro      intialized object 
+  *       int     samp_size number of iterution for doing avg sampling algorithm
+  *       float   alpha     weight of the most recent value
+  */
+void read_tilt_expo_mov(float* angels, MPU6050 gyro, int samp_size, float alpha) {
+  int16_t cur_x, cur_y, cur_z;
+  int16_t x, y, z;
+  gyro.getAcceleration(&x, &y, &z);
+  for (int i = 0; i < samp_size; ++i) {
+    gyro.getAcceleration(&cur_x, &cur_y, &cur_z);
+    cur_x = (alpha * x) + ((1-alpha) * cur_x);
+    cur_y = (alpha * y) + ((1-alpha) * cur_y);
+    cur_z = (alpha * z) + ((1-alpha) * cur_z);
+    x = cur_x; y = cur_y; z = cur_z;
+  }
+  angels[0] = atan(cur_x / (pow((pow(cur_y, 2) + pow(cur_z, 2)), 0.5))) * 180 / M_PI;
+  angels[1] = atan(cur_y / (pow((pow(cur_x, 2) + pow(cur_z, 2)), 0.5))) * 180 / M_PI;
+  angels[2] = atan((pow((pow(cur_y, 2) + pow(cur_z, 2)), 0.5)) / cur_z) * 180 / M_PI;
+ }
