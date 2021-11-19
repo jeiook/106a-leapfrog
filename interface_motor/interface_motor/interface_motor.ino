@@ -22,7 +22,8 @@ void setup() {
   Serial.begin(38400);
 }
 
-// set min pwm = 0, max pwm = 1000 -> write vals: min = 70, max = 180
+// set min pwm = 0, max pwm = 1000 -> write vals: min =  70, max = 180
+// set min pwm = 0, max pwm = 1200 -> write vals: min = ~35, max =
 
 void loop() {
   // put your main code here, to run repeatedly:
