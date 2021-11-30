@@ -17,9 +17,14 @@ void setup() {
   ESC.attach(9);    // (pin, min PWM, max PWM) in microseconds
   ESC.write(0);
   delay(2000);
-  ESC.write(1200);
+  ESC.write(1000);
   delay(2000);
-  Serial.begin(38400);
+  Serial.begin(9600);
+  Serial.println("starting in 3 sec");
+  for (int i = 30; i < 50; i += 4) {
+    delay(500);
+  }
+  delay(500);
 }
 
 // set min pwm = 0, max pwm = 1000 -> write vals: min =  70, max = 180
@@ -29,12 +34,8 @@ void loop() {
   // put your main code here, to run repeatedly:
 //  potValue = analogRead(A0);
 //  potValue = map(potValue, 0, 1023, 0, 180); // Map the potentiometer value [0, 1023] -> [0,180]
-  for (int i = 0; i < 180; i += 2) {
-    ESC.write(i);
-    Serial.print(i);
-    Serial.print("\n");
-    delay(500);
-  }
+  ESC.write(56);
+  delay(10);
 //  Serial.print(potValue);
 //  Serial.print("\n");
 }
