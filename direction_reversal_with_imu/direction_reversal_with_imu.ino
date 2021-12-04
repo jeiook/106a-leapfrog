@@ -16,7 +16,9 @@
 #include <math.h>
 #include <Servo.h>
 
-#define MOTOR_SIGNAL_PORT 9
+#define MOTOR1_PWM_PORT 9
+#define MOTOR1_BRAKE_PORT 8
+#define MOTOR1_DIRECTION_PORT 3
 
 Servo ESC;      // Servo object to control ESC
 
@@ -99,19 +101,14 @@ void read_tilt_kalman(float* angles, MPU6050 gyro, int samp_size) {
  }
 
 void motor_setup() {
-  ESC.attach(MOTOR_SIGNAL_PORT);    // (pin, min PWM, max PWM) in microseconds
-  Serial.println("starting in 3 sec");
-  for (int i = 30; i < 50; i += 4) {
-    ESC.write(i);
-    delay(500);
-  }
-  delay(500);
+  ESC.attach(MOTOR1_PWM_PORT);
 }
 
 int move_motor(float angle) {
   angle = abs(angle);
   if (angle < 1) {
-    ESC.write(30);
+    digitalWrite(MOTOR1_BRAKE_PORT, HIGH);
+    ESC.write();
     Serial.println("motor output 30");
   }
   int val = map(angle, 1, 90, 0, 180);
@@ -121,16 +118,18 @@ int move_motor(float angle) {
 }
 
 void flip_ports_setup() {
-  pinMode(8, OUTPUT);
-  digitalWrite(8, HIGH);
-  pinMode(3, OUTPUT);
+  pinMode(MOTOR1_BRAKE_PORT, OUTPUT);
+  digitalWrite(MOTOR1_BRAKE_PORT, HIGH);
+  pinMode(MOTOR1_DIRECTION_PORT, OUTPUT);
   // todo: motor 2  
 }
 
 void orient_motor(int number, float angle) {
   if (angle >= 0) {
-    digitalWrite(3, HIGH);
+    digitalWrite(MOTOR1_DIRECTION_PORT, HIGH);
   } else {
-    digitalWrite(3, LOW);
+    digitalWrite(MOTOR1_DIRECTION_PORT, LOW);
   }
 }
+
+void 
