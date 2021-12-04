@@ -18,9 +18,6 @@
 
 #define MOTOR_SIGNAL_PORT 9
 
-#define DIR_MOTOR1_FLIP_POS 3
-#define DIR_MOTOR1_FLIP_NEG 4
-
 Servo ESC;      // Servo object to control ESC
 
 MPU6050 gyro;
@@ -117,24 +114,23 @@ int move_motor(float angle) {
     ESC.write(30);
     Serial.println("motor output 30");
   }
-  int val = map(angle, 1, 90, 56, 180);
+  int val = map(angle, 1, 90, 0, 180);
   Serial.print("motor output ");
   Serial.println(val);
   ESC.write(val);
 }
 
 void flip_ports_setup() {
-  pinMode(DIR_MOTOR1_FLIP_POS, OUTPUT);
-  pinMode(DIR_MOTOR1_FLIP_NEG, OUTPUT);
+  pinMode(8, OUTPUT);
+  digitalWrite(8, HIGH);
+  pinMode(3, OUTPUT);
   // todo: motor 2  
 }
 
 void orient_motor(int number, float angle) {
   if (angle >= 0) {
-    digitalWrite(DIR_MOTOR1_FLIP_POS, HIGH);
-    digitalWrite(DIR_MOTOR1_FLIP_NEG, HIGH);
+    digitalWrite(3, HIGH);
   } else {
-    digitalWrite(DIR_MOTOR1_FLIP_POS, LOW);
-    digitalWrite(DIR_MOTOR1_FLIP_NEG, LOW);
+    digitalWrite(3, LOW);
   }
 }
