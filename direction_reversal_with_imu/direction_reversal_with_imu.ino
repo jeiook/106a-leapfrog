@@ -19,6 +19,8 @@
 #define MOTOR1_PWM_PORT 9
 #define MOTOR1_BRAKE_PORT 8
 #define MOTOR1_DIRECTION_PORT 3
+#define MOTOR1_ENCODER_PORT_1 2
+#define MOTOR1_ENCODER_PORT_2 5
 
 Servo ESC;      // Servo object to control ESC
 
@@ -28,6 +30,10 @@ int16_t ax, ay, az;
 // rotation in "degree/sec"
 int16_t gx, gy, gz;
 
+long count = 0;
+long prevCount = 0;
+long prevTime = millis();
+
 void setup() {
   // join I2C bus 
     #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
@@ -36,31 +42,46 @@ void setup() {
         Fastwire::setup(400, true);
     #endif
     Serial.begin(9600);
-    Serial.println("Intialize Gyro connection");
+//    Serial.println("Intialize Gyro connection");
     gyro.initialize();
-    Serial.println("Testing device connections...");
-    Serial.println(gyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+//    Serial.println("Testing device connections...");
+//    Serial.println(gyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
 
-    Serial.println("Setting up motor");
+//    Serial.println("Setting up motor");
     motor_setup();
     flip_ports_setup();
 }
 
 void loop() {
-  float angles[] = {0.0, 0.0, 0.0};
-  read_tilt_kalman(angles, gyro, 100);
-//  Serial.println("Tilt angles:");Serial.print("\t");
-//  Serial.print("x-tilt: ");Serial.println(angles[0]);Serial.print("\t");
-//  Serial.print("y-tilt: ");Serial.println(angles[1]);Serial.print("\t");
-//  Serial.print("z-tilt: ");Serial.println(angles[2]);
+//  float angles[] = {0.0, 0.0, 0.0};
+//  read_tilt_kalman(angles, gyro, 100);
+//
+////  Serial.println("Tilt angles:");Serial.print("\t");
+////  Serial.print("x-tilt: ");Serial.println(angles[0]);Serial.print("\t");
+////  Serial.print("y-tilt: ");Serial.println(angles[1]);Serial.print("\t");
+////  Serial.print("z-tilt: ");Serial.println(angles[2]);
+//
+//  orient_motor(1, angles[0]);
+//  move_motor(angles[0]);
+//  
+//  angles[0] = 0;
+//  angles[1] = 0;
+//  angles[2] = 0;
 
-  orient_motor(1, angles[0]);
-  move_motor(angles[0]);
-  
-  angles[0] = 0;
-  angles[1] = 0;
-  angles[2] = 0;
-  delay(5);
+//  delay(5);
+
+  for (int i = 0; i < 1000; i += 10) {
+    ESC.write(i);
+    Serial.print("motor output ");
+    Serial.println(i);
+    Serial.print((float)(count - prevCount) / (float) (millis() - prevTime) * 1000 * 60);
+    Serial.println(" RPM");
+    Serial.print("thing ");
+    Serial.println(analogRead(A5));
+    prevCount = count;
+    prevTime = millis();
+    delay(500);
+  }
 }
 
 /*
@@ -102,14 +123,20 @@ void read_tilt_kalman(float* angles, MPU6050 gyro, int samp_size) {
 
 void motor_setup() {
   ESC.attach(MOTOR1_PWM_PORT);
+
+  pinMode(MOTOR1_ENCODER_PORT_1, INPUT);
+  pinMode(MOTOR1_ENCODER_PORT_2, INPUT);
+  digitalWrite(MOTOR1_ENCODER_PORT_1, LOW);
+  digitalWrite(MOTOR1_ENCODER_PORT_2, LOW);
+  attachInterrupt(digitalPinToInterrupt(MOTOR1_ENCODER_PORT_1), readEncoder, CHANGE);
 }
 
 int move_motor(float angle) {
   angle = abs(angle);
   if (angle < 1) {
     digitalWrite(MOTOR1_BRAKE_PORT, HIGH);
-    ESC.write();
-    Serial.println("motor output 30");
+    ESC.write(0);
+    Serial.println("motor output 0");
   }
   int val = map(angle, 1, 90, 0, 180);
   Serial.print("motor output ");
@@ -124,12 +151,21 @@ void flip_ports_setup() {
   // todo: motor 2  
 }
 
+// number: 1 or 2
 void orient_motor(int number, float angle) {
-  if (angle >= 0) {
-    digitalWrite(MOTOR1_DIRECTION_PORT, HIGH);
-  } else {
-    digitalWrite(MOTOR1_DIRECTION_PORT, LOW);
+  if (number == 1) {
+    if (angle >= 0) {
+      digitalWrite(MOTOR1_DIRECTION_PORT, HIGH);
+    } else {
+      digitalWrite(MOTOR1_DIRECTION_PORT, LOW);
+    } 
   }
 }
 
-void 
+void readEncoder() { 
+  if(digitalRead(MOTOR1_ENCODER_PORT_1) == digitalRead(MOTOR1_ENCODER_PORT_2)) {
+    --count;
+  } else {
+    ++count;
+  }
+}
