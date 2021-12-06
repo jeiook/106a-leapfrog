@@ -54,6 +54,13 @@ public:
     angles[0] = atan(U_hat[0] / (pow((pow(U_hat[1], 2) + pow(U_hat[2], 2)), 0.5))) * 180 / M_PI;
     angles[1] = atan(U_hat[1] / (pow((pow(U_hat[0], 2) + pow(U_hat[2], 2)), 0.5))) * 180 / M_PI + 30;
     angles[2] = atan((pow((pow(U_hat[1], 2) + pow(U_hat[2], 2)), 0.5)) / U_hat[2]) * 180 / M_PI;
+
+    /* print angles[] to Serial for data processing: https://www.hackerscapes.com/how-to-save-data-from-arduino-to-a-csv-file-using-processing/ */
+    Serial.print(angles[0]);
+    Serial.print(",");
+    Serial.print(angles[1]);
+    Serial.print(",");
+    Serial.println(angles[2]);
   }
 
   /*
