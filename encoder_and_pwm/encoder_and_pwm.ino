@@ -1,6 +1,6 @@
 #include <Servo.h>
 
-#define MOTOR_SIGNAL 9
+#define MOTOR_PWM 9
 #define ENCODER_A 2
 #define ENCODER_B 5
 #define BRAKE 7
@@ -10,7 +10,7 @@ Servo motor;
 
 void setup() {
   // put your setup code here, to run once:
-  pinMode(MOTOR_SIGNAL, OUTPUT);
+  pinMode(MOTOR_PWM, OUTPUT);
   TCCR1B = TCCR1B & 0b11111000 | 0x04;
   pinMode(ENCODER_A, INPUT);
   pinMode(ENCODER_B, INPUT);
@@ -30,7 +30,7 @@ long prevTime = millis();
 
 void loop() {
   // put your main code here, to run repeatedly:
-  analogWrite(MOTOR_SIGNAL, 0);
+  analogWrite(MOTOR_PWM, 0);
   Serial.println((count - prevCount) / (millis() - prevTime));
   prevTime = millis();
   prevCount = count;
