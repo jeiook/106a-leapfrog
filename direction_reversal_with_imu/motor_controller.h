@@ -27,6 +27,8 @@ class MotorController {
   const int CW_CCW;
   const int BRAKE;
 
+  bool cw;
+
   long prevCount;
   long prevTime;
 
@@ -36,8 +38,9 @@ public:
    */
   MotorController(int num, int ena, int enb, int pwm, int cw_ccw, int brake) 
     : number(num), ENA(ena), ENB(enb), PWM(pwm), CW_CCW(cw_ccw), BRAKE(brake) {
-      long prevCount = 0;
-      long prevTime = 0;
+      prevCount = 0;
+      prevTime = 0;
+      cw = true;
     }
 
   void setup() {
@@ -57,15 +60,16 @@ public:
     }
 
     pinMode(BRAKE, OUTPUT);
-    digitalWrite(BRAKE, HIGH);
+    digitalWrite(BRAKE, LOW);
     
     pinMode(CW_CCW, OUTPUT);
+    digitalWrite(CW_CCW, HIGH);
     prevTime = millis();
   }
 
   void move_motor(float angle) {
     angle = abs(angle);
-    if (angle < 1) {
+    if (angle < 0.5) {
       digitalWrite(BRAKE, LOW);
       analogWrite(PWM, 255);
       return;
@@ -76,11 +80,18 @@ public:
   }
 
   void orient_motor(float angle) {
-    digitalWrite(BRAKE, LOW);
     if (angle >= 0) {
+      if (!cw) {
+        digitalWrite(BRAKE, LOW);  
+      }
       digitalWrite(CW_CCW, HIGH);
+      cw = true;
     } else {
+      if (cw) {
+        digitalWrite(BRAKE, LOW);  
+      }
       digitalWrite(CW_CCW, LOW);
+      cw = false;
     }
     digitalWrite(BRAKE, HIGH);
   }
