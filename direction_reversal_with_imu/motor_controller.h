@@ -3,6 +3,8 @@
 const float MOTOR_DEADZONE_ANGLE = 0.5;
 long motor1_en_count = 0;
 long motor2_en_count = 0;
+float Kp = 1;
+float Kd = 3;
 
 void readEncoder1() {
   if(digitalRead(MOTOR1_ENA) == digitalRead(MOTOR1_ENB)) {
@@ -21,9 +23,6 @@ void readEncoder2() {
 }
 
 class MotorController {
-  float Kp = 1;
-  float Kd = 0.75;
-  
   const int number;
   const int ENA;
   const int ENB;
@@ -86,9 +85,9 @@ public:
       return;
     }
     float control_term = Kp*angle + Kd*ang_vel;
-    int val = map(control_term, MOTOR_DEADZONE_ANGLE, max_angle, 255, 0);
-    analogWrite(PWM, val);
+    int val = map(control_term, Kp*MOTOR_DEADZONE_ANGLE, (Kp+Kd)*max_angle/2, 255, 0);
     digitalWrite(BRAKE, HIGH);
+    analogWrite(PWM, val);
   }
 
   /*
@@ -129,27 +128,5 @@ public:
       prevCount = motor2_en_count;
     }
     prevTime = millis();
-  }
-
-  /*
-   * Adjust the term proportional to the error (angular displacement)
-   */
-  void tune_prop(float val) {
-      Kp = val;
-  }
-  
-  float get_prop() {
-    return Kp;
-  }
-
-  /*
-   * Adjust the term proportional to the derivative of the error (angular velocity)
-   */
-  void tune_deriv(float val) {
-      Kd = val;
-  }
-  
-  float get_deriv() {
-    return Kd;
   }
 };

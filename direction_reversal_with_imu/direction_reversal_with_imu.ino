@@ -32,20 +32,26 @@ void setup() {
 }
 
 void loop() {
-  imu.read_tilt_kalman(100);
-  mc1.orient_motor(imu.get_angle(0));
-  mc2.orient_motor(imu.get_angle(1));
-  mc1.move_motor(imu.max_angle(), imu.get_angle(0), imu.get_angular_vel(0));
-  mc2.move_motor(imu.max_angle(), imu.get_angle(1), imu.get_angular_vel(1));
-
-  /*
-   * code to facilitate tuning while running
-   */
-  if (Serial.available() > 0) {
-    float val = Serial.parseFloat();
-    mc1.tune_deriv(val);
-    Serial.print("new Kd is ");
-    Serial.println(mc1.get_deriv());
-  }
+//  imu.read_tilt_kalman(100);
+  imu.read_tilt_expo_mov(100, 0.5);
+//  mc1.orient_motor(imu.get_angle(0));
+//  mc2.orient_motor(imu.get_angle(1));
+//  mc1.move_motor(imu.max_angle(), imu.get_angle(0), imu.get_angular_vel(0));
+//  mc2.move_motor(imu.max_angle(), imu.get_angle(1), imu.get_angular_vel(1));
+//  MPU6050 gyro = imu.gyro;
+//  Serial.print("accel: ");
+//  Serial.print(gyro.getAccelerationX());
+//  Serial.print(", ");
+//  Serial.print(gyro.getAccelerationY());
+//  Serial.print(", ");
+//  Serial.print(gyro.getAccelerationZ());
+//
+//  Serial.print(";\t rotation: ");
+//  Serial.print(gyro.getRotationX());
+//  Serial.print(", ");
+//  Serial.print(gyro.getRotationY());
+//  Serial.print(", ");
+//  Serial.print(gyro.getRotationZ());
+//  Serial.println();
   delay(5);
 }
