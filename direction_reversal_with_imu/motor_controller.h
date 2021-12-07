@@ -1,5 +1,6 @@
 #include "definitions.h"
 
+const float MOTOR_DEADZONE_ANGLE = 0.5;
 long motor1_en_count = 0;
 long motor2_en_count = 0;
 
@@ -20,12 +21,16 @@ void readEncoder2() {
 }
 
 class MotorController {
+  float Kp = 1;
+  float Kd = 0.75;
+  
   const int number;
   const int ENA;
   const int ENB;
   const int PWM;
   const int CW_CCW;
   const int BRAKE;
+  const bool FLIP_MOTOR;
 
   bool cw;
 
@@ -33,16 +38,18 @@ class MotorController {
   long prevTime;
 
 public:
-  /*
-   * Sets up arduino-facing motor ports
-   */
-  MotorController(int num, int ena, int enb, int pwm, int cw_ccw, int brake) 
-    : number(num), ENA(ena), ENB(enb), PWM(pwm), CW_CCW(cw_ccw), BRAKE(brake) {
+  MotorController(int num, int ena, int enb, int pwm, int cw_ccw, int brake, bool flip) 
+    : number(num), ENA(ena), ENB(enb), PWM(pwm), CW_CCW(cw_ccw), BRAKE(brake), FLIP_MOTOR(flip) {
       prevCount = 0;
       prevTime = 0;
       cw = true;
     }
 
+  /*
+   * Sets up connections and starting state of the motor, as well as
+   * configuring the timer (which is necessary for effective brushless 
+   * motor control).
+   */
   void setup() {
     pinMode(PWM, OUTPUT);
 
@@ -67,19 +74,31 @@ public:
     prevTime = millis();
   }
 
-  void move_motor(float angle) {
+  /*
+   * Moves the motor according to some defined control law
+   */
+  void move_motor(float max_angle, float angle, float ang_vel) {
     angle = abs(angle);
-    if (angle < 0.5) {
+    ang_vel = abs(ang_vel);
+    if (angle < MOTOR_DEADZONE_ANGLE) {
       digitalWrite(BRAKE, LOW);
       analogWrite(PWM, 255);
       return;
     }
-    digitalWrite(BRAKE, HIGH);
-    int val = map(angle, 1, 90, 255, 0);
+    float control_term = Kp*angle + Kd*ang_vel;
+    int val = map(control_term, MOTOR_DEADZONE_ANGLE, max_angle, 255, 0);
     analogWrite(PWM, val);
+    digitalWrite(BRAKE, HIGH);
   }
 
+  /*
+   * Determines rotational direction of the motor depending on the 
+   * angular displacement of the stick
+   */
   void orient_motor(float angle) {
+    if (FLIP_MOTOR) {
+      angle = -angle;  
+    }
     if (angle >= 0) {
       if (!cw) {
         digitalWrite(BRAKE, LOW);  
@@ -96,16 +115,41 @@ public:
     digitalWrite(BRAKE, HIGH);
   }
 
+  /*
+   * Get the angular velocity of the reaction wheel, in units of rpm
+   */
   float getVelocity() {
     float vel;
     if (number == 1) {
-      vel = (float)(motor1_en_count - prevCount) / (millis() - prevTime); 
+      vel = (float)(motor1_en_count - prevCount) / (millis() - prevTime) * 60000; 
       prevCount = motor1_en_count;
     }
     if (number == 2) {
-      vel = (float)(motor2_en_count - prevCount) / (millis() - prevTime);
+      vel = (float)(motor2_en_count - prevCount) / (millis() - prevTime) * 60000;
       prevCount = motor2_en_count;
     }
     prevTime = millis();
+  }
+
+  /*
+   * Adjust the term proportional to the error (angular displacement)
+   */
+  void tune_prop(float val) {
+      Kp = val;
+  }
+  
+  float get_prop() {
+    return Kp;
+  }
+
+  /*
+   * Adjust the term proportional to the derivative of the error (angular velocity)
+   */
+  void tune_deriv(float val) {
+      Kd = val;
+  }
+  
+  float get_deriv() {
+    return Kd;
   }
 };
