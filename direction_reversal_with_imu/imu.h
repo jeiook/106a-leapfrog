@@ -8,7 +8,8 @@ class IMU {
   float imu_offset0 = 0;
   float imu_offset1 = 0;
   float imu_offset2 = 0;
-  float IMU_MAX = 60;
+  float IMU_MAX = 30;
+  bool debug_angle = false;
 
   /* 
    *  Calculates angular velocity (derivative term) and integral
@@ -168,6 +169,9 @@ public:
    *  https://www.hackerscapes.com/how-to-save-data-from-arduino-to-a-csv-file-using-processing/
    */
   void print_angles() {
+    if (!debug_angle) {
+      return;  
+    }
     Serial.print("0: ");
     Serial.print(angles[0]);
     Serial.print(", 1: ");
@@ -184,6 +188,10 @@ public:
     return ang_vel[i];
   }
 
+  float get_angular_acc(int i) {
+    // todo  
+  }
+
   /*
    * get the integral of the angular displacement of the stick at an index (0 - 2)
    */
@@ -196,17 +204,24 @@ public:
    */
   void calibrate() {
     Serial.println("hold the stick in the equilibrium position.");
-    Serial.println("starting calibration in 2 seconds...");
-    delay(2000);
     Serial.println("collecting samples...");
     float time_prev = millis();
     read_tilt_expo_mov(5000, 0.5);
     Serial.print("calibration took ");
     Serial.println(millis() - time_prev);
-    imu_offset0 = -get_angle(0);
-    imu_offset1 = -get_angle(1);
-    imu_offset2 = -get_angle(2);
-    Serial.print("\n\ndone calibrating!\n\n");
+//    imu_offset0 = -get_angle(0);
+//    imu_offset1 = -get_angle(1);
+//    imu_offset2 = -get_angle(2);
+    imu_offset0 = -angles[0];
+    imu_offset1 = -angles[1];
+    imu_offset2 = -angles[2];
+    Serial.print("offsets: ");
+    Serial.print(imu_offset0);
+    Serial.print(", ");
+    Serial.print(imu_offset1);
+    Serial.print(", ");
+    Serial.println(imu_offset2);
+    Serial.print("\n\ndone calibrating IMU!\n\n");
   }
 
   float max_angle() {

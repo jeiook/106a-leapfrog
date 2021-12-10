@@ -3,10 +3,6 @@
 const float MOTOR_DEADZONE_ANGLE = 0.25;
 long motor1_en_count = 0;
 long motor2_en_count = 0;
-float Kp = 5;
-float Kd = 2;
-float Ki = 0.1;
-float Kv = -10;
 
 float motor1_vel = 0;
 float motor2_vel = 0;
@@ -36,17 +32,23 @@ class MotorController {
   const int BRAKE;
   const bool FLIP_MOTOR;
 
-  bool cw;
-
   long prevCount;
   long prevTime;
 
+  float Kp;
+  float Kd;
+  float Ki;
+  float Kv;
+
 public:
-  MotorController(int num, int ena, int enb, int pwm, int cw_ccw, int brake, bool flip) 
+  MotorController(int num, int ena, int enb, int pwm, int cw_ccw, int brake, bool flip, float p, float d, float i, float v) 
     : number(num), ENA(ena), ENB(enb), PWM(pwm), CW_CCW(cw_ccw), BRAKE(brake), FLIP_MOTOR(flip) {
       prevCount = 0;
       prevTime = 0;
-      cw = true;
+      Kp = p;
+      Kd = d;
+      Ki = i;
+      Kv = v;
     }
 
   /*
@@ -76,8 +78,11 @@ public:
     pinMode(CW_CCW, OUTPUT);
     digitalWrite(CW_CCW, HIGH);
 
+    manual_move(250);
+    delay(2000);
+    getVelocity();
+
     manual_move(255);
-    prevTime = millis();
   }
 
   /*
@@ -90,64 +95,80 @@ public:
   /*
    * Moves the motor according to some defined control law
    */
-  void move_motor(float max_angle, float angle, float ang_vel, float ang_int) {
-    angle = abs(angle);
-    ang_vel = abs(ang_vel);
-    if (angle < MOTOR_DEADZONE_ANGLE) {
-      digitalWrite(BRAKE, LOW);
-      analogWrite(PWM, 255);
-      return;
-    }
+  void move_motor(float max_angle, float angle, float ang_vel, float ang_accel, float ang_int) {
     float motor_vel;
     if (number == 1) {
-      motor_vel = motor1_vel;  
+      motor_vel = motor1_vel;
     } if (number == 2) {
       motor_vel = motor2_vel;
     }
-    float control_term = Kp*angle + Kd*ang_vel + Ki*ang_int + Kv*motor_vel;
-//    control_term [min, max] -> [255, 0]
-    int val = map(control_term, 0, (Kp+Kd)*max_angle/2, 255, 0);
-    digitalWrite(BRAKE, HIGH);
+
+//    float desired_motor_vel = (m*g*l*sin(angle) - Ic*ang_accel) * (millis() - ti) / If + motor_vel
+    
+    float p = Kp*angle;
+    float d = Kd*ang_vel;
+    float in = Ki*ang_int;
+    float v = Kv*motor_vel;
+    float control_term = p + d + in + v;
+    orient_motor(control_term);
+    control_term = abs(control_term);
+    float max_term = abs((Kp+Kd+Ki)*max_angle) * 5;
+    if (control_term > max_term) {
+      control_term = max_term;
+    }
+    int val = 255 - map(control_term, 0, max_term, 2, 125);
+    if (val < 125) {
+      return;
+    }
+//    digitalWrite(BRAKE, HIGH);
     manual_move(val);
+    
+    Serial.print("motor ");
+    Serial.print(number);
+    Serial.print(": ");
+    Serial.print("p=");
+    Serial.print(p);
+    Serial.print("; d=");
+    Serial.print(d);
+    Serial.print("; in=");
+    Serial.print(in);
+    Serial.print("; v=");
+    Serial.print(v);
+    Serial.print(" u=");
+    Serial.print(control_term);
+    Serial.print(" out of ");
+    Serial.print(max_term);
+    Serial.print(" ---> ");
+    Serial.println(val);
   }
 
   /*
-   * Determines rotational direction of the motor depending on the 
-   * angular displacement of the stick
+   * Determines rotational direction of the motor depending on the control term
    */
-  void orient_motor(float angle) {
+  void orient_motor(float control_term) {
     if (FLIP_MOTOR) {
-      angle = -angle;  
+      control_term = -control_term;
     }
-    if (angle >= 0) {
-      if (!cw) {
-        digitalWrite(BRAKE, LOW);  
-      }
+    if (control_term >= 0) {
       digitalWrite(CW_CCW, HIGH);
-      cw = true;
     } else {
-      if (cw) {
-        digitalWrite(BRAKE, LOW);  
-      }
       digitalWrite(CW_CCW, LOW);
-      cw = false;
     }
-    digitalWrite(BRAKE, HIGH);
   }
 
   /*
-   * Get the angular velocity of the reaction wheel
+   * Get the angular velocity of the reaction wheel in rotations per second
    */
   float getVelocity() {
     float vel;
     if (number == 1) {
-//      print_encoders();
-      motor1_vel = (float)(motor1_en_count - prevCount) / (millis() - prevTime) * 1000; 
+      motor1_vel = (float)(motor1_en_count - prevCount) / (millis() - prevTime) * 1000;
+      vel = motor1_vel;
       prevCount = motor1_en_count;
     }
     if (number == 2) {
-//      print_encoders();
       motor2_vel = (float)(motor2_en_count - prevCount) / (millis() - prevTime) * 1000;
+      vel = motor2_vel;
       prevCount = motor2_en_count;
     }
     prevTime = millis();
@@ -185,6 +206,8 @@ public:
 
   /*
    * Sweeps through PWM values and prints the velocity at each PWM.
+   * The purpose of this test is to determine the linearity of our motor velocity with respect
+   *  to time and PWM.
    * To conduct this test, change the delay value and examine how the Serial Plotter changes.
    */
   void sweep_pwm() {
@@ -213,6 +236,8 @@ public:
 
   /*
    * Sets the PWM values from LOW -> HIGH very quickly and prints the velocity at each PWM.
+   * The purpose of this test is to characterize the time delay between our set PWM and output
+   *  velocity.
    * To conduct this test, change the delay value and examine how the Serial Plotter changes.
    */
   void oscillate_pwm() {
