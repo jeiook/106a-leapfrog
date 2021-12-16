@@ -33,12 +33,12 @@ void setup() {
 }
 
 void loop() {
-//  mc1.getVelocity();
-//  delay(100);
-//  mc1.oscillate_pwm();
+  mc1.getVelocity();
+  delay(100);
+  mc1.oscillate_pwm();
 
 //  imu.read_tilt_expo_mov(100, 0.5);
-  imu.read_tilt_kalman(100);
-  mc1.move_motor(imu.max_angle(), imu.get_angle(2), imu.get_angular_vel(2), imu.get_angular_acc(2), imu.get_angular_int(2));
-  mc2.move_motor(imu.max_angle(), imu.get_angle(1), imu.get_angular_vel(1), imu.get_angular_acc(1), imu.get_angular_int(1));
+//  imu.read_tilt_kalman(100);
+//  mc1.move_motor(imu.max_angle(), imu.get_angle(2), imu.get_angular_vel(2), imu.get_angular_acc(2), imu.get_angular_int(2));
+//  mc2.move_motor(imu.max_angle(), imu.get_angle(1), imu.get_angular_vel(1), imu.get_angular_acc(1), imu.get_angular_int(1));
 }

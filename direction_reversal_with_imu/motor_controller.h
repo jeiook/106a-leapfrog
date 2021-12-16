@@ -241,7 +241,7 @@ public:
    * To conduct this test, change the delay value and examine how the Serial Plotter changes.
    */
   void oscillate_pwm() {
-    int time_delay = 250;
+    int time_delay = 500;
 
     manual_move(255);
     Serial.print("255");
