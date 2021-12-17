@@ -26,16 +26,16 @@ MotorController mc2 = MotorController(2, MOTOR2_ENA, MOTOR2_ENB, MOTOR2_PWM, MOT
 
 void setup() {
   Serial.begin(9600);
-  imu.setup();
+//  imu.setup();
   mc1.setup();
   mc2.setup();
   Serial.print("\n\ndone calibrating motors!\n\n");
 }
 
 void loop() {
-  mc1.getVelocity();
+  mc2.getVelocity();
   delay(100);
-  mc1.oscillate_pwm();
+  mc2.oscillate_pwm();
 
 //  imu.read_tilt_expo_mov(100, 0.5);
 //  imu.read_tilt_kalman(100);
